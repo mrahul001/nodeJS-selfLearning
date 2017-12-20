@@ -7,47 +7,53 @@ const mysql = require('mysql') ;
 const url = require('url') ;
 const express = require('express') ; 
 const event = require('events') ;
+const mongo = require('mongodb') ;
 
 //mail transporter -> gmail
 var transporter = nodemailer.createTransport({
-service : 'Gmail' ,
+service : 'Gmail' ,  //preferred mailing service , mine is google mail
   auth : {
-    user : 'rahul.sharma@findnsecure.com' ,
-    pass : ''
+    user : '' , //enter gmail username
+    pass : ''    //enter gmail password
   }
 });
 
 //mail options 
 var mailOption = {
-  from : 'rahul.sharma@findnsecure.com' ,
-  to : 'rsfactor007@gmail.com' ,
+  from : '' ,  //sender email account 
+  to : '' ,     //recipient email account 
   subject : 'sending email using node.j' ,
-  text : 'this was easy!!!'
+  text : 'Bingo!! you have done it!'
 };
+
+//mysql database configuration 
+ var  mysqlClient = mysql.createConnection({
+            host : 'localhost' ,
+            user : '' , //enter mysql user
+            password : '' ,  //enter mysql above user's password
+            database : ''    // select database to enter into
+          });
+
+//Mongodb database configuration 
+var mongoClient = mongo.MongoClient ; 
+var mongoURL = "mongodb://localhost:27017/mydb" ;
+// var mongoURL = "mongodb://user:password@localhost:27017/mydb" ; 
 
 //created server
 http.createServer(function (req, res) {
   //switch case to run desirted module check 
-
   if (req.url == "/nodeModules") {
-      //form module
-      var form = new formidable.IncomingForm();
-      form.parse(req, function (err, fields, files) {
-        //console.log(fields);
-        switch(fields.selectpicker) {
-
-          case 'db' : //mysql module
-          var  conn = mysql.createConnection({
-            host : 'localhost' ,
-            user : 'root' ,
-            password : 'embarc' ,
-            database : 'fnsv5' 
-          });
-          conn.connect(function(err){
+    //form module
+    var form = new formidable.IncomingForm();
+    form.parse(req, function (err, fields, files) {
+      //console.log(fields);
+      switch(fields.selectpicker) {
+        case 'mysql' : //mysql module
+           mysqlClient.connect(function(err){
             if(err) throw err ;
             console.log("connected!! , connection to mysql is there!!");
             var sqlQuery = "select password from Users where username = \"root\" ";
-            conn.query( sqlQuery, function (err , result , fields) {
+            mysqlClient.query( sqlQuery, function (err , result , fields) {
               if (err) throw err ;
               console.log("Result: " + result); 
             res.end();
@@ -71,6 +77,17 @@ http.createServer(function (req, res) {
           }
           break ;
 
+          case 'mongo' :
+
+          mongoClient.connect(mongoURL , function(err , db) {
+            if (err) throw err ;
+            console.log("Bingo!! connected to mongoDB!!") ;
+            db.close();
+            res.write("Bingo!! connected to mongoDB!!") ;
+
+          });
+          break ;
+
           case 'eve' : // events module 
           /*console.log("event module is not done yet!!");
           res.end("event module is not done yet!!"); */
@@ -92,7 +109,6 @@ http.createServer(function (req, res) {
           console.log('sent email: ' + info.messageId) ;
           });
           res.end();
-
         }
   });
   //when want to check database conection 
@@ -103,5 +119,4 @@ http.createServer(function (req, res) {
       return res.end();
     });
 }
-
 }).listen(8080);
